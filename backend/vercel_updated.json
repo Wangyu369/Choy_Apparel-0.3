@@ -1,0 +1,14 @@
+{
+  "functions": {
+    "ecommerce_project/wsgi.py": {
+      "runtime": "python3.9",
+      "maxLambdaSize": "15mb"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/ecommerce_project/wsgi.py"
+    }
+  ]
+}
