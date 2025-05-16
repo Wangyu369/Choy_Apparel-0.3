@@ -16,7 +16,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'choy-apparel-0-3-1.onrender.com,localhost,127.0.0.1,').split(',')
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'choy-apparel-0-3.onrender.com,localhost,127.0.0.1,choy-apparel.vercel.app').split(',')
 
 
 # Application definition
@@ -163,7 +163,7 @@ SIMPLE_JWT = {
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.environ.get(
     'CORS_ALLOWED_ORIGINS', 
-    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:8080,https://choy-apparel-0-3-1.onrender.com,https://choy-apparel.vercel.app'
+    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:8080,https://choy-apparel.vercel.app,https://choy-apparel-0-3.onrender.com,http://localhost:3000'
 ).split(',')
 
 
