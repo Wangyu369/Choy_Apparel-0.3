@@ -3,6 +3,8 @@ from pathlib import Path
 from datetime import timedelta
 import dj_database_url
 from decouple import config
+from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,9 +93,29 @@ WSGI_APPLICATION = 'ecommerce_project.wsgi.application'
 #     }
 # }
 
-DATABASES = {
-    'default': dj_database_url.config(default=os.environ.get('DATABASE_URL'))
-}
+
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    # If DATABASE_URL is set, use it to configure the database
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
+    }
+else:
+    # Otherwise, use the default PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USER', 'postgres'), 
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),       
+        }
+    }
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
