@@ -284,8 +284,8 @@ export const ordersService = {
   updateItemQuantity: (productId: string, quantity: number) =>
     apiRequest('orders/cart/update-quantity/', 'POST', { product_id: productId, quantity }),
 
-  mergeCart: (guestCart: CartItem[]) =>
-    apiRequest('orders/cart/merge/', 'POST', { items: guestCart }),
+  // mergeCart: (guestCart: CartItem[]) =>
+  //   apiRequest('orders/cart/merge/', 'POST', { items: guestCart }),
 
   clearCart: () =>
     apiRequest('orders/cart/clear/', 'POST'),
