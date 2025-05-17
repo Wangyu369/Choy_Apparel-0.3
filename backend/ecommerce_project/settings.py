@@ -27,6 +27,7 @@ INSTALLED_APPS = [
 
     'jazzmin',
     'fontawesome_5',
+    'whitenoise.runserver_nostatic',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -107,11 +108,11 @@ else:
     # Otherwise, use the default PostgreSQL configuration
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'postgres'),
-            'USER': os.environ.get('DB_USER', 'postgres'), 
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'ENGINE': 'django.contrib.gis.db.backends.postgris',
+            'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
+            'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
+            'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
+            'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
             'PORT': os.environ.get('DB_PORT', '5432'),       
         }
     }
