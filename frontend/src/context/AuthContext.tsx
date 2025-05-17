@@ -110,8 +110,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await authService.refreshToken(refreshTokenValue);
-      if (response && response.token) {
-        localStorage.setItem('authTokens', JSON.stringify({ access: response.token, refresh: refreshTokenValue }));
+      const newAccess = response.token || response.access;
+      if (newAccess) {
+        localStorage.setItem('authTokens', JSON.stringify({ access: newAccess, refresh: refreshTokenValue }));
       } else {
         throw new Error('No access token returned from refresh');
       }
