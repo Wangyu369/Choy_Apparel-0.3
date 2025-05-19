@@ -183,8 +183,8 @@ class CartViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         serializer = CartItemSerializer(cart_items, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['post'], url_path='clear')
-    def clear(self, request):
-        """Clear all cart items for the logged-in user"""
-        CartItem.objects.filter(user=request.user).delete()
-        return Response({'detail': 'Cart cleared'}, status=status.HTTP_200_OK)
+    # @action(detail=False, methods=['post'], url_path='clear')
+    # def clear(self, request):
+    #     """Clear all cart items for the logged-in user"""
+    #     CartItem.objects.filter(user=request.user).delete()
+    #     return Response({'detail': 'Cart cleared'}, status=status.HTTP_200_OK)
