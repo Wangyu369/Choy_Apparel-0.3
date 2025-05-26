@@ -84,20 +84,23 @@ load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'postgres'),
-        'USER': os.environ.get('DB_USER', 'postgres'), 
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),       
+if DATABASE_URL:
+    # If DATABASE_URL is set, use it to configure the database
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL)
     }
-}
+else:
+    # Otherwise, use the default PostgreSQL configuration
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USER', 'postgres'), 
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),       
+        }
+    }
 
 
 

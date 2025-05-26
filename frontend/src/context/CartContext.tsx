@@ -98,28 +98,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Fetch merged cart from backend
           const backendCart = await ordersService.getUserCart();
           console.log('Backend cart fetched on login:', backendCart);
-          if (Array.isArray(backendCart)) {
-            const mappedBackendCart = backendCart.map((item: any) => ({
-              product: item.product_details,
-              quantity: item.quantity,
-            }));
-            setItems(mappedBackendCart);
-            lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
-            // Clear localStorage cart after merging
-            localStorage.removeItem('cart');
-            initialLoadRef.current = false; // Mark initial load done
-          } else {
-            // Handle error (likely 401 or other API error)
-            console.error('Failed to load user cart:', backendCart);
-            setItems([]);
-            lastSyncedItemsRef.current = [];
-            initialLoadRef.current = false;
-            // Optionally, trigger signOut() or redirect to login if 401
-            // if (backendCart && backendCart.detail === 'Authentication credentials were not provided.') {
-            //   signOut();
-            // }
-          }
-
+          const mappedBackendCart = backendCart.map((item: any) => ({
+            product: item.product_details,
+            quantity: item.quantity,
+          }));
+          setItems(mappedBackendCart);
+          lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
+          // Clear localStorage cart after merging
+          localStorage.removeItem('cart');
+          initialLoadRef.current = false; // Mark initial load done
         } catch (error) {
           console.error('Failed to load user cart:', error);
           setItems(localCart);
