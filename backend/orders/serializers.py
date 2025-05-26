@@ -59,14 +59,14 @@ class OrderCreateSerializer(serializers.Serializer):
         for item_data in items_data:
             product_id = item_data.pop('product_id')
             quantity = item_data.get('quantity', 1)
+            price = item_data.get('price')  # Use client-submitted price
             try:
                 product = Product.objects.get(id=product_id)
-                # Use product price from DB, ignore client price
                 OrderItem.objects.create(
                     order=order,
                     product=product,
                     quantity=quantity,
-                    price=product.price
+                    price=price
                 )
                 
                 # Update product stock

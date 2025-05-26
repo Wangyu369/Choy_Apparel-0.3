@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { 
@@ -7,11 +6,11 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogDescription 
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/AuthContext';
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
+import { useAuth } from '../context/AuthContext';
 import { toast } from 'sonner';
 
 type AuthModalProps = {
@@ -57,10 +56,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
         onClose();
       }
     } catch (err) {
-      let errorMessage = err instanceof Error ? err.message : 'Authentication failed';
-      if (errorMessage.includes("Cannot read properties of undefined (reading 'id')")) {
-        errorMessage = "Please create an account";
-      }
+      
+      const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
       setError(errorMessage);
       toast.error(errorMessage);
     }

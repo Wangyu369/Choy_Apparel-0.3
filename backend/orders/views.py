@@ -28,7 +28,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         order.status = 'canceled'
         order.save()
-        return Response({'status': 'canceled'}, status=status.HTTP_200_OK)
+        order.delete()
+        return Response({'status': 'canceled and removed'}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], url_path='cancel-item')
     def cancel_item(self, request, pk=None):

@@ -13,12 +13,37 @@ const Cart: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authView, setAuthView] = useState<'signin' | 'signup'>('signin');
   const [authCheckInProgress, setAuthCheckInProgress] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const navigate = useNavigate();
-  
+
+  // Select all checkbox handler
+  const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) { 
+      setSelectedItems(items.map(item => item.product.id));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  // Individual item checkbox handler
+  const handleItemCheckboxChange = (productId: string) => {
+    setSelectedItems(prevSelected => {
+      if (prevSelected.includes(productId)) {
+        return prevSelected.filter(id => id !== productId);
+      } else {
+        return [...prevSelected, productId];
+      }
+    });
+  };
+
   const handleCheckout = async () => {
+    if (selectedItems.length === 0) {
+      alert('Please select at least one item to checkout.');
+      return;
+    }
     console.log('Checkout button clicked, auth status:', isAuthenticated);
     setAuthCheckInProgress(true);
-    
+
     // Try to refresh the token first if user has one
     if (!isAuthenticated) {
       try {
@@ -27,26 +52,37 @@ const Cart: React.FC = () => {
         if (refreshed) {
           console.log('Authentication refreshed successfully, proceeding to checkout');
           setAuthCheckInProgress(false);
-          navigate('/checkout');
+          // Pass selected items to checkout page via state or context
+          navigate('/checkout', { state: { selectedItems } });
           return;
         }
       } catch (error) {
         console.error('Failed to refresh authentication:', error);
       }
-      
+
       console.log('User not authenticated, showing auth modal');
       setAuthView('signin');
       setShowAuthModal(true);
       setAuthCheckInProgress(false);
       return;
     }
-    
+
     // Proceed to checkout - use navigate instead of direct URL change
     console.log('User authenticated, navigating to checkout page');
     setAuthCheckInProgress(false);
-    navigate('/checkout');
+    navigate('/checkout', { state: { selectedItems } });
   };
-  
+
+// Calculate total price based on selected items only
+const selectedTotalPrice = items
+  .filter(item => selectedItems.includes(item.product.id))
+  .reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+
+useEffect(() => {
+  // Initialize selected items to all items on load
+  setSelectedItems(items.map(item => item.product.id));
+}, [items]);
+
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -76,12 +112,28 @@ const Cart: React.FC = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="divide-y">
+      <div className="py-4 flex items-center">
+        <input
+          type="checkbox"
+          id="selectAll"
+          checked={selectedItems.length === items.length}
+          onChange={handleSelectAllChange}
+          className="mr-2"
+        />
+        <label htmlFor="selectAll" className="font-medium">Select All</label>
+      </div>
       <div className="space-y-4 py-6">
         {items.map(item => (
           <div key={item.product.id} className="flex items-center py-4">
+            <input
+              type="checkbox"
+              checked={selectedItems.includes(item.product.id)}
+              onChange={() => handleItemCheckboxChange(item.product.id)}
+              className="mr-4"
+            />
             <div className="relative h-16 w-16 rounded-md overflow-hidden">
               <img
                 src={item.product.image}
@@ -141,7 +193,8 @@ const Cart: React.FC = () => {
       <div className="py-6">
         <div className="flex justify-between mb-4">
           <span>Subtotal</span>
-          <span>₱{totalPrice.toFixed(2)}</span>
+          <span>₱{selectedTotalPrice.toFixed(2)}</span>
+
         </div>
         <div className="flex justify-between mb-4">
           <span>Shipping</span>
@@ -149,13 +202,14 @@ const Cart: React.FC = () => {
         </div>
         <div className="flex justify-between font-semibold">
           <span>Total</span>
-          <span>₱{totalPrice.toFixed(2)}</span>
+          <span>₱{selectedTotalPrice.toFixed(2)}</span>
         </div>
         
         <Button
           className="mt-6 w-full"
           onClick={handleCheckout}
-          disabled={authCheckInProgress}
+          disabled={authCheckInProgress || selectedItems.length === 0}
+
         >
           {authCheckInProgress
             ? "Checking authentication..."

@@ -80,42 +80,44 @@ TEMPLATES = [
 WSGI_APPLICATION = 'ecommerce_project.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': os.environ.get('DB_NAME', 'postgres'),
-#         'USER': os.environ.get('DB_USER', 'postgres'), 
-#         'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
-#         'HOST': os.environ.get('DB_HOST', 'localhost'),
-#         'PORT': os.environ.get('DB_PORT', '5432'),       
-#     }
-# }
-
-
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
-if DATABASE_URL:
-    # If DATABASE_URL is set, use it to configure the database
-    DATABASES = {
-        'default': dj_database_url.config(default=DATABASE_URL)
+
+# Database
+# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'postgres'),
+        'USER': os.environ.get('DB_USER', 'postgres'), 
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),       
     }
-else:
-    # Otherwise, use the default PostgreSQL configuration
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.contrib.gis.db.backends.postgris',
-            'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
-            'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
-            'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
-            'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
-            'PORT': os.environ.get('DB_PORT', '5432'),       
-        }
-    }
+}
+
+
+
+# if DATABASE_URL:
+#     # If DATABASE_URL is set, use it to configure the database
+#     DATABASES = {
+#         'default': dj_database_url.config(default=DATABASE_URL)
+#     }
+# else:
+#     # Otherwise, use the default PostgreSQL configuration
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.contrib.gis.db.backends.postgris',
+#             'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
+#             'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
+#             'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
+#             'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
+#             'PORT': os.environ.get('DB_PORT', '5432'),       
+#         }
+#     }
 
 
 # Static files (CSS, JavaScript, Images)
@@ -185,8 +187,8 @@ SIMPLE_JWT = {
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = os.environ.get(
-    'CORS_ALLOWED_ORIGINS', 
-    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:8080,https://choy-apparel.vercel.app,https://choy-apparel-0-3.onrender.com,http://localhost:3000'
+    'CORS_ALLOWED_ORIGINS',
+    'http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173,http://localhost:8080,https://choy-apparel.vercel.app,https://choy-apparel-0-3.onrender.com,http://localhost:3000,https://choy-apparel.vercel.app,https://choy-apparel-0-3.onrender.com,http://localhost:8081'
 ).split(',')
 
 

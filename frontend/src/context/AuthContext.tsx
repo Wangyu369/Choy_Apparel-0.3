@@ -30,6 +30,8 @@ export const useAuth = () => {
   return context;
 };
 
+import { setSignOutCallback } from '../services/api_part1_part';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const attemptTokenRefresh = async (): Promise<boolean> => {
     const tokens = JSON.parse(localStorage.getItem('authTokens') || 'null');
+    console.log('attemptTokenRefresh current tokens:', tokens);
     const refreshTokenValue = tokens?.refresh;
     if (!refreshTokenValue) {
       return false;
@@ -110,8 +113,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const response = await authService.refreshToken(refreshTokenValue);
-      if (response && response.token) {
-        localStorage.setItem('authTokens', JSON.stringify({ access: response.token, refresh: refreshTokenValue }));
+      console.log('attemptTokenRefresh response:', response);
+      const newAccess = response.token || response.access;
+      if (newAccess) {
+        localStorage.setItem('authTokens', JSON.stringify({ access: newAccess, refresh: refreshTokenValue }));
       } else {
         throw new Error('No access token returned from refresh');
       }
@@ -156,10 +161,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       const response = await authService.signIn(email, password);
+      console.log('signIn response tokens:', response.token || response['token'], response.refresh);
       localStorage.setItem('authTokens', JSON.stringify({ access: response.token || response['token'], refresh: response.refresh }));
       const userData = {
         id: response.user.id,
@@ -170,6 +177,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isNewUser', 'false'); // Mark as existing user for cart merge
+      // Clear cartMerged flag to force cart reload on sign-in
+      localStorage.removeItem('cartMerged');
       toast.success('Signed in successfully');
       scheduleTokenRefresh();
     } catch (error) {
@@ -187,6 +197,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const first_name = nameParts[0] || '';
       const last_name = nameParts.slice(1).join(' ') || '';
       const response = await authService.signUp(first_name, last_name, email, password);
+      console.log('signUp response tokens:', response.token || response['token'], response.refresh);
       localStorage.setItem('authTokens', JSON.stringify({ access: response.token || response['token'], refresh: response.refresh }));
       const userData = {
         id: response.user.id,
@@ -197,6 +208,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(userData);
       localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isNewUser', 'true'); // Mark as new user for cart merge
+      localStorage.removeItem('cartMerged'); // Clear cartMerged flag to force cart merge
       toast.success('Account created successfully');
       scheduleTokenRefresh();
     } catch (error) {
@@ -211,6 +224,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     clearAuthState();
     toast.success('Signed out successfully');
   };
+
+  // Set the signOut callback for token refresh failure handling
+  useEffect(() => {
+    setSignOutCallback(signOut);
+  }, []);
 
   if (!isInitialized) {
     return <div className="flex justify-center items-center min-h-screen">

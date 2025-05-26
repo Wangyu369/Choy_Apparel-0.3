@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useCheckout } from '../hooks/useCheckout';
@@ -18,16 +18,24 @@ import {
 } from '../components/ui/dialog';
 
 const CheckoutPage = () => {
-  const { isAuthenticated, user,refreshToken } = useAuth();
+  const { isAuthenticated, user, refreshToken } = useAuth();
   const { items, totalPrice, clearCart } = useCart();
   const { processCheckout, isProcessing } = useCheckout();
   const navigate = useNavigate();
-  
-  
+  const location = useLocation();
+
+  // Extract selectedItems from navigation state or fallback to all items
+const selectedItems = (location.state && location.state.selectedItems) || items.map(item => item.product.id);
+// Filter items to only selected items
+const filteredItems = items.filter(item => selectedItems.includes(item.product.id));
+// Calculate total price for filtered items
+const filteredTotalPrice = filteredItems.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+
+
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [addressIsComplete, setAddressIsComplete] = useState(false);
   const [showAddressPrompt, setShowAddressPrompt] = useState(false);
-  
+
   // Form state
   const [cardNumber, setCardNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -145,14 +153,14 @@ const CheckoutPage = () => {
       toast.error('Please select a payment method');
       return;
     }
-    
+
     // Check if address is complete
     if (!addressIsComplete) {
       console.log('Address is incomplete');
       setShowAddressPrompt(true);
       return;
     }
-    
+
     // Final authentication check before proceeding
     if (!isAuthenticated || !user) {
       console.log('Authentication check failed before order submission');
@@ -163,18 +171,23 @@ const CheckoutPage = () => {
         return;
       }
     }
-    
+
     try {
+      // Get selected items from navigation state or fallback to all items
+      const selectedItems = (location.state && location.state.selectedItems) || items.map(item => item.product.id);
+      const filteredItems = items.filter(item => selectedItems.includes(item.product.id));
       console.log('Processing checkout with data:', {
         address: formData,
         paymentMethod,
-        items: items.length
+        items: filteredItems.length
       });
-      await processCheckout(formData, paymentMethod);
+      await processCheckout(formData, paymentMethod, filteredItems);
       localStorage.setItem('checkoutComplete', 'true');
       clearCart();
+      // Refresh page to update orders after successful checkout
+
     } catch (error) {
-      
+
       console.error('Checkout failed:', error);
       if (error instanceof Error && error.message.includes('Unauthorized')) {
         toast.error('Your session has expired. Please sign in again.');
@@ -336,21 +349,23 @@ const CheckoutPage = () => {
               <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
               
               <div className="space-y-4 mb-4">
-                {items.map(item => (
-                  <div key={item.product.id} className="flex justify-between">
-                    <div>
-                      <span className="font-medium">{item.product.name}</span>
-                      <span className="text-muted-foreground ml-1">x{item.quantity}</span>
-                    </div>
-                    <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                ))}
+                {filteredItems.map(item => (
+  <div key={item.product.id} className="flex justify-between">
+    <div>
+      <span className="font-medium">{item.product.name}</span>
+      <span className="text-muted-foreground ml-1">x{item.quantity}</span>
+    </div>
+    <span>₱{(item.product.price * item.quantity).toFixed(2)}</span>
+  </div>
+))}
+
               </div>
               
               <div className="border-t pt-4">
                 <div className="flex justify-between mb-2">
                   <span>Subtotal</span>
-                  <span>₱{totalPrice.toFixed(2)}</span>
+                  <span>₱{filteredTotalPrice.toFixed(2)}</span>
+
                 </div>
                 <div className="flex justify-between mb-2">
                   <span>Shipping</span>
@@ -358,7 +373,7 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Total</span>
-                  <span>₱{totalPrice.toFixed(2)}</span>
+                  <span>₱{filteredTotalPrice.toFixed(2)}</span>
                 </div>
               </div>
             </div>

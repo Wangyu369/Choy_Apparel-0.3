@@ -16,15 +16,16 @@ export const useCheckout = () => {
 
   const processCheckout = async (
     shippingAddress: Address,
-    paymentMethod: PaymentMethod
+    paymentMethod: PaymentMethod,
+    selectedItems: typeof items = items
   ) => {
     setIsProcessing(true);
-    
+
     try {
       // Always attempt to refresh token before checkout
       console.log('Attempting to refresh token before checkout');
       const tokenRefreshed = await refreshToken();
-      
+
       if (!tokenRefreshed) {
         console.error('Failed to refresh authentication token');
         toast.error('Your session has expired. Please sign in again to continue.');
@@ -32,37 +33,36 @@ export const useCheckout = () => {
         setIsProcessing(false);
         return null;
       }
-      
+
       console.log('Authentication check successful, proceeding with checkout');
-      
+
       // Validate items before sending
-      if (!items || items.length === 0) {
-        console.error('No items in cart');
-        toast.error('Your cart is empty. Please add items before checking out.');
-        navigate('/cart');
+      if (!selectedItems || selectedItems.length === 0) {
+        console.error('No items selected for checkout');
+        toast.error('Please select items to checkout.');
         setIsProcessing(false);
         return null;
       }
-      
+
       // Format order data for the Django API
-      const orderItems = items.map(item => {
+      const orderItems = selectedItems.map(item => {
         // Validate each item has required fields
         if (!item.product || !item.product.id) {
           console.error('Invalid product in cart item:', item);
           throw new Error('Invalid product data in cart');
         }
-        
+
         return {
           product_id: item.product.id,
           quantity: item.quantity,
           price: item.product.price
         };
       });
-      
+
       // Create order data object with validated items
       const orderData: DjangoOrderCreate = {
         items: orderItems,
-        total_amount: totalPrice,
+        total_amount: selectedItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
         payment_method: paymentMethod,
         shipping_first_name: shippingAddress.firstName,
         shipping_last_name: shippingAddress.lastName,
@@ -72,49 +72,55 @@ export const useCheckout = () => {
         shipping_zip: shippingAddress.zip,
         shipping_phone: shippingAddress.phone
       };
-      
+
       console.log('Sending order to API with items:', JSON.stringify(orderItems, null, 2));
       console.log('Complete order data:', JSON.stringify(orderData, null, 2));
-      
+
       // Send order to the API
       const response = await ordersService.createOrder(orderData);
-      
+
       // Invalidate orders query to update badge
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      
+      // Instead of invalidating, update cache directly to add new order
+      queryClient.setQueryData(['orders'], (oldOrders: any) => {
+        if (!oldOrders) return [response];
+        return [...oldOrders, response];
+      });
+      // Invalidate products query to update product stock and status
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+
       // Construct product names string for success message
-      const productNames = items.map(item => item.product.name).join(', ');
-      
+      const productNames = selectedItems.map(item => item.product.name).join(', ');
+
       // Handle successful order with product names instead of order id
       toast.success(`Order successful! Products ordered: ${productNames}`);
-      
+
       // Clear backend cart immediately after successful checkout
       await ordersService.clearCart();
 
       // Set checkoutComplete flag before clearing cart to trigger CartContext effect
       localStorage.setItem('checkoutComplete', 'true');
-      
+
       // Clear cart immediately after successful checkout
       clearCart();
-      
+
       // Redirect to success page with order info and product names
-      navigate('/', { 
-        state: { 
+      navigate('/', {
+        state: {
           orderSuccess: true,
           orderId: response.id,
           paymentMethod,
           productNames
-        } 
+        }
       });
-      
+
       return response;
     } catch (error) {
       console.error('Checkout error:', error);
-      
+
       // Specific error handling
       if (error instanceof Error) {
-        if (error.message.includes('Unauthorized') || error.message.includes('401') || 
-            error.message.includes('token_not_valid') || error.message.includes('Token is invalid')) {
+        if (error.message.includes('Unauthorized') || error.message.includes('401') ||
+          error.message.includes('token_not_valid') || error.message.includes('Token is invalid')) {
           console.log('Authentication error during checkout, redirecting to cart');
           toast.error('Your session has expired. Please sign in again to continue.');
           navigate('/cart'); // Always redirect to cart for auth issues, not /profile
@@ -126,13 +132,13 @@ export const useCheckout = () => {
       } else {
         toast.error('An unexpected error occurred. Please try again.');
       }
-      
+
       throw error;
     } finally {
       setIsProcessing(false);
     }
   };
-  
+
   return {
     processCheckout,
     isProcessing

@@ -89,23 +89,37 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isAuthenticated && user) {
         try {
           const cartMerged = localStorage.getItem('cartMerged');
-          // Merge guest cart items into backend cart using mergeCart API only if not merged before
-          if (localCart.length > 0 && cartMerged !== 'true') {
+          const isNewUser = localStorage.getItem('isNewUser') === 'true';
+          // Merge guest cart items into backend cart only if user is new and not merged before
+          if (localCart.length > 0 && cartMerged !== 'true' && isNewUser) {
             await ordersService.mergeCart(localCart);
             localStorage.setItem('cartMerged', 'true');
           }
           // Fetch merged cart from backend
           const backendCart = await ordersService.getUserCart();
           console.log('Backend cart fetched on login:', backendCart);
-          const mappedBackendCart = backendCart.map((item: any) => ({
-            product: item.product_details,
-            quantity: item.quantity,
-          }));
-          setItems(mappedBackendCart);
-          lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
-          // Clear localStorage cart after merging
-          localStorage.removeItem('cart');
-          initialLoadRef.current = false; // Mark initial load done
+          if (Array.isArray(backendCart)) {
+            const mappedBackendCart = backendCart.map((item: any) => ({
+              product: item.product_details,
+              quantity: item.quantity,
+            }));
+            setItems(mappedBackendCart);
+            lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
+            // Clear localStorage cart after merging
+            localStorage.removeItem('cart');
+            initialLoadRef.current = false; // Mark initial load done
+          } else {
+            // Handle error (likely 401 or other API error)
+            console.error('Failed to load user cart:', backendCart);
+            setItems([]);
+            lastSyncedItemsRef.current = [];
+            initialLoadRef.current = false;
+            // Optionally, trigger signOut() or redirect to login if 401
+            // if (backendCart && backendCart.detail === 'Authentication credentials were not provided.') {
+            //   signOut();
+            // }
+          }
+
         } catch (error) {
           console.error('Failed to load user cart:', error);
           setItems(localCart);
@@ -197,17 +211,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Update last synced items
         lastSyncedItemsRef.current = currentItems;
-      } catch (error: any) {
-        console.error('Failed to sync cart to backend:', error);
+        } catch (error: any) {
+          console.error('Failed to sync cart to backend:', error);
           if (error.message.includes('Unauthorized')) {
             // Force logout on unauthorized error
             signOut();
             toast.error('Session expired. Please log in again.');
           }
-      } finally {
-        syncingRef.current = false;
-      }
-    };
+        } finally {
+          syncingRef.current = false;
+        }
+      };
 
     // Debounce sync by 500ms
     const debounceTimeout = setTimeout(syncCartToBackend, 500);
