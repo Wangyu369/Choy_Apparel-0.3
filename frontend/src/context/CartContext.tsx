@@ -12,6 +12,8 @@ type CartItem = {
 
 type CartContextType = {
   items: CartItem[];
+  selectedItems: string[];
+  setSelectedItems: React.Dispatch<React.SetStateAction<string[]>>;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -33,6 +35,7 @@ export const useCart = () => {
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { user, isAuthenticated, signOut } = useAuth();
   const syncingRef = useRef(false);
   const initialLoadRef = useRef(true);
@@ -57,20 +60,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check if checkoutComplete flag is set in localStorage
       const checkoutComplete = localStorage.getItem('checkoutComplete');
       if (checkoutComplete === 'true') {
-        // Clear cart and localStorage, remove flag
-        setItems([]);
-        localStorage.removeItem('cart');
-        localStorage.removeItem('cartMerged');
+        // Remove the checkoutComplete flag but do not clear the cart or backend
         localStorage.removeItem('checkoutComplete');
         lastSyncedItemsRef.current = [];
         initialLoadRef.current = false;
 
-        // Clear backend cart to prevent repopulation on refresh
-        if (isAuthenticated && user) {
-          ordersService.clearCart().catch(error => {
-            console.error('Failed to clear backend cart after checkout:', error);
-          });
-        }
+        // Do not clear the cart or backend here to allow individual item removal
 
         return;
       }
@@ -135,7 +130,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Save cart to localStorage on items change
   useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
+    try {
+      localStorage.setItem('cart', JSON.stringify(items));
+    } catch (error) {
+      console.error('Failed to save cart to localStorage:', error);
+    }
   }, [items]);
 
   // Sync cart to backend with debounce and error handling
@@ -162,9 +161,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const lastSyncedItems = lastSyncedItemsRef.current;
         const currentItems = items;
+        const currentSelectedItems = selectedItems;
 
         console.log('Syncing cart to backend. Last synced items:', lastSyncedItems);
         console.log('Current items:', currentItems);
+        console.log('Current selected items:', currentSelectedItems);
 
         // Helper to create a map from productId to CartItem
         const mapByProductId = (arr: CartItem[]) => {
@@ -176,16 +177,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const lastMap = mapByProductId(lastSyncedItems);
         const currentMap = mapByProductId(currentItems);
 
-        // Detect removed items (in last but not in current)
+        // Detect removed items (in last but not in current and selected)
         for (const [productId, lastItem] of lastMap.entries()) {
-          if (!currentMap.has(productId)) {
+          if (!currentMap.has(productId) && currentSelectedItems.includes(productId)) {
             console.log('Removing item from backend cart:', productId);
             await ordersService.removeItemFromCart(productId);
           }
         }
 
-        // Detect added or updated items
+        // Detect added or updated items (only for selected items)
         for (const [productId, currentItem] of currentMap.entries()) {
+          if (!currentSelectedItems.includes(productId)) {
+            continue; // Skip items not selected
+          }
           const lastItem = lastMap.get(productId);
           if (!lastItem) {
             console.log('Adding item to backend cart:', productId, currentItem.quantity);
@@ -196,8 +200,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Update last synced items
-        lastSyncedItemsRef.current = currentItems;
+        // Update last synced items only for selected items
+        lastSyncedItemsRef.current = currentItems.filter(item => currentSelectedItems.includes(item.product.id));
         } catch (error: any) {
           console.error('Failed to sync cart to backend:', error);
           if (error.message.includes('Unauthorized')) {
@@ -214,7 +218,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const debounceTimeout = setTimeout(syncCartToBackend, 500);
 
     return () => clearTimeout(debounceTimeout);
-  }, [items, isAuthenticated, user, signOut]);
+  }, [items, selectedItems, isAuthenticated, user, signOut]);
 
   const addItem = (product: Product, quantity = 1) => {
     setItems(currentItems => {
@@ -278,6 +282,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <CartContext.Provider
       value={{
         items,
+        selectedItems,
+        setSelectedItems,
         addItem,
         removeItem,
         updateQuantity,

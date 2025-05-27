@@ -1,9 +1,14 @@
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.utils.translation import gettext_lazy as _
 from .models import CustomUser, Address
 from django.db import transaction, connection
+
+class AddressInline(admin.TabularInline):
+    model = Address
+    extra = 0
+    fields = ('first_name', 'last_name', 'address', 'city', 'state', 'zip', 'phone', 'is_default')
+    readonly_fields = ('created_at', 'updated_at')
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
@@ -12,6 +17,7 @@ class CustomUserAdmin(UserAdmin):
     list_filter = ('is_staff', 'is_active')
     search_fields = ('email', 'first_name', 'last_name')
     ordering = ('email',)
+    inlines = [AddressInline]
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
@@ -22,8 +28,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active')}
-        ),
+            'fields': ('email', 'first_name', 'last_name', 'password1', 'password2', 'is_staff', 'is_active')}),
     )
     
     def get_deleted_objects(self, objs, request):
@@ -84,3 +89,5 @@ class AddressAdmin(admin.ModelAdmin):
     list_display = ('user', 'first_name', 'last_name', 'city', 'state', 'is_default')
     list_filter = ('state', 'is_default')
     search_fields = ('user__email', 'first_name', 'last_name', 'city', 'state')
+
+admin.site.unregister(Address)

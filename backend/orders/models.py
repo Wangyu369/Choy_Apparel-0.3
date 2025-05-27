@@ -42,13 +42,26 @@ class Order(models.Model):
     def __str__(self):
         return f"Order {self.id} - {self.user.email}"
 
+    class Meta:
+        verbose_name = "Checkout Status"
+        verbose_name_plural = "Checkout Status"
+
 
 class OrderItem(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('processing', 'Processing'),
+        ('shipped', 'Shipped'),
+        ('delivered', 'Delivered'),
+        ('canceled', 'Canceled'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"

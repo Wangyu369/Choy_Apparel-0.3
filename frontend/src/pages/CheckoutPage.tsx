@@ -19,7 +19,7 @@ import {
 
 const CheckoutPage = () => {
   const { isAuthenticated, user, refreshToken } = useAuth();
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, removeItem } = useCart();
   const { processCheckout, isProcessing } = useCheckout();
   const navigate = useNavigate();
   const location = useLocation();
@@ -183,8 +183,12 @@ const filteredTotalPrice = filteredItems.reduce((acc, item) => acc + item.produc
       });
       await processCheckout(formData, paymentMethod, filteredItems);
       localStorage.setItem('checkoutComplete', 'true');
-      clearCart();
+      // Remove only checked out items from cart after successful checkout
+      filteredItems.forEach(item => {
+        removeItem(item.product.id);
+      });
       // Refresh page to update orders after successful checkout
+
 
     } catch (error) {
 
@@ -195,7 +199,7 @@ const filteredTotalPrice = filteredItems.reduce((acc, item) => acc + item.produc
       }
     }
   };
-  
+
   // If authentication check is still processing, show loading
   if (isAuthenticated === undefined) {
     return (
@@ -204,12 +208,12 @@ const filteredTotalPrice = filteredItems.reduce((acc, item) => acc + item.produc
       </div>
     );
   }
-  
+
   // Don't render the main content if not authenticated or cart is empty
   if (items.length === 0) {
     return null; // Will redirect via useEffect
   }
-  
+
   return (
     <div className="min-h-screen">
       <Helmet>

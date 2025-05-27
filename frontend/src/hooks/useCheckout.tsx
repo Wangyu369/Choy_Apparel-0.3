@@ -9,7 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export const useCheckout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const { items, totalPrice, clearCart } = useCart();
+  const { items, totalPrice, removeItem } = useCart();
   const { refreshToken, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -94,14 +94,13 @@ export const useCheckout = () => {
       // Handle successful order with product names instead of order id
       toast.success(`Order successful! Products ordered: ${productNames}`);
 
-      // Clear backend cart immediately after successful checkout
-      await ordersService.clearCart();
+      // Remove only the selected items from the cart after successful checkout
+      selectedItems.forEach(item => {
+        removeItem(item.product.id);
+      });
 
       // Set checkoutComplete flag before clearing cart to trigger CartContext effect
       localStorage.setItem('checkoutComplete', 'true');
-
-      // Clear cart immediately after successful checkout
-      clearCart();
 
       // Redirect to success page with order info and product names
       navigate('/', {
