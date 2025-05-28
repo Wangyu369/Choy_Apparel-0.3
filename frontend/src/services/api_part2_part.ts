@@ -124,10 +124,10 @@ export async function apiRequest<T>(
     }
   }
   
-  if (!response.ok) {
+if (!response.ok) {
     const errorText = await response.text();
-    console.error(`Wrong email format try again`);
-    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    console.error(`API request failed with status ${response.status}: ${errorText}`);
+    throw new Error(`API request failed: ${response.status} ${response.statusText} - ${errorText}`);
   }
   
   const json = await response.json();

@@ -33,13 +33,28 @@ export const useCart = () => {
   return context;
 };
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const { user, isAuthenticated, signOut } = useAuth();
   const syncingRef = useRef(false);
   const initialLoadRef = useRef(true);
   const lastSyncedItemsRef = useRef<CartItem[]>([]);
+
+  // Function to update cart after order placement by removing ordered items
+  const updateCartAfterOrder = (orderedProductIds: string[]) => {
+    setItems(currentItems => {
+      const updatedItems = currentItems.filter(item => !orderedProductIds.includes(item.product.id));
+      // Update localStorage with updated cart
+      try {
+        localStorage.setItem('cart', JSON.stringify(updatedItems));
+        console.log('updateCartAfterOrder: Updated localStorage cart after order:', updatedItems);
+      } catch (error) {
+        console.error('updateCartAfterOrder: Failed to update localStorage cart:', error);
+      }
+      return updatedItems;
+    });
+  };
 
   const mergeCarts = (cartA: CartItem[], cartB: CartItem[]): CartItem[] => {
     const mergedMap = new Map<string, CartItem>();
@@ -77,7 +92,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           localCart = JSON.parse(storedCart);
         } catch (error) {
           console.error('Failed to parse stored cart:', error);
-          localStorage.removeItem('cart');
+          // Do not remove cart here to avoid losing data on parse error
+          // localStorage.removeItem('cart');
         }
       }
 
@@ -97,20 +113,34 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             product: item.product_details,
             quantity: item.quantity,
           }));
-          setItems(mappedBackendCart);
-          lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
-          // Clear localStorage cart after merging
-          localStorage.removeItem('cart');
+          if (mappedBackendCart.length > 0) {
+            setItems(mappedBackendCart);
+            lastSyncedItemsRef.current = mappedBackendCart; // Set last synced items on login
+            // Clear localStorage cart only if backend cart is non-empty
+            localStorage.removeItem('cart');
+          } else {
+            // If backend cart is empty, fallback to local cart and preserve localStorage cart
+            setItems(localCart);
+            lastSyncedItemsRef.current = localCart;
+          }
+          // Initialize selectedItems with all product IDs if empty
+          if (mappedBackendCart.length > 0) {
+            setSelectedItems(mappedBackendCart.map(item => item.product.id));
+          } else {
+            setSelectedItems(localCart.map(item => item.product.id));
+          }
           initialLoadRef.current = false; // Mark initial load done
         } catch (error) {
           console.error('Failed to load user cart:', error);
           setItems(localCart);
           lastSyncedItemsRef.current = localCart;
+          setSelectedItems(localCart.map(item => item.product.id));
           initialLoadRef.current = false;
         }
       } else {
         setItems(localCart);
         lastSyncedItemsRef.current = localCart;
+        setSelectedItems(localCart.map(item => item.product.id));
         initialLoadRef.current = false;
       }
     };
@@ -120,8 +150,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Add logout handler to clear cart on logout
   useEffect(() => {
     if (!isAuthenticated) {
+      console.log('Logout detected: Clearing cart state but preserving localStorage cart for persistence');
       setItems([]);
-      localStorage.removeItem('cart');
+      setSelectedItems([]);
+      // Do NOT remove localStorage 'cart' here to preserve cart across logouts
+      // Remove only cartMerged flag as it is related to backend merge state
       localStorage.removeItem('cartMerged');
       initialLoadRef.current = true;
       lastSyncedItemsRef.current = [];
@@ -156,6 +189,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     syncingRef.current = true;
+
+    let debounceTimeout: NodeJS.Timeout;
 
     const syncCartToBackend = async () => {
       try {
@@ -214,11 +249,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       };
 
-    // Debounce sync by 500ms
-    const debounceTimeout = setTimeout(syncCartToBackend, 500);
+    debounceTimeout = setTimeout(() => {
+      syncCartToBackend();
+    }, 500);
 
+    // Debounce sync by 500ms
     return () => clearTimeout(debounceTimeout);
-  }, [items, selectedItems, isAuthenticated, user, signOut]);
+  }, [items, isAuthenticated, user, selectedItems, signOut]);
 
   const addItem = (product: Product, quantity = 1) => {
     setItems(currentItems => {
@@ -297,3 +334,5 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     </CartContext.Provider>
   );
 };
+
+export { CartProvider };

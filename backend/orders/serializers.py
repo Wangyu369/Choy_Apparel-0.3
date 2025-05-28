@@ -28,8 +28,14 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'status', 'created_at', 'updated_at')
 
 
+import uuid
+from rest_framework import serializers
+from .models import Order, OrderItem, CartItem
+from products.serializers import ProductListSerializer
+from products.models import Product
+
 class OrderItemCreateSerializer(serializers.Serializer):
-    product_id = serializers.IntegerField()
+    product_id = serializers.UUIDField()
     quantity = serializers.IntegerField(min_value=1)
     price = serializers.DecimalField(max_digits=10, decimal_places=2)
 
