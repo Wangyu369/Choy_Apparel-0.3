@@ -23,7 +23,7 @@ axios.interceptors.request.use((config) => {
 }, (error) => Promise.reject(error));
 
 // Base API URL - you'll need to change this to your Django backend URL
-export const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://choy-apparel-0-3.onrender.com';
 
 // Helper to get the access token from localStorage
 export const getToken = () => {

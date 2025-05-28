@@ -91,16 +91,28 @@ if DATABASE_URL:
     }
 else:
     # Otherwise, use the default PostgreSQL configuration
-    DATABASES = {
+    # DATABASES = {
+    #     'default': {
+    #         'ENGINE': 'django.db.backends.postgresql',
+    #         'NAME': os.environ.get('DB_NAME', 'postgres'),
+    #         'USER': os.environ.get('DB_USER', 'postgres'), 
+    #         'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
+    #         'HOST': os.environ.get('DB_HOST', 'localhost'),
+    #         'PORT': os.environ.get('DB_PORT', '5432'),       
+    #     }
+    # }
+
+     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'postgres'),
-            'USER': os.environ.get('DB_USER', 'postgres'), 
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'joshua'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'ENGINE': 'django.contrib.gis.db.backends.postgris',
+            'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
+            'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
+            'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
+            'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
             'PORT': os.environ.get('DB_PORT', '5432'),       
         }
     }
+
 
 
 
@@ -111,16 +123,16 @@ else:
 #     }
 # else:
 #     # Otherwise, use the default PostgreSQL configuration
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': 'django.contrib.gis.db.backends.postgris',
-#             'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
-#             'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
-#             'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
-#             'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
-#             'PORT': os.environ.get('DB_PORT', '5432'),       
-#         }
-#     }
+    # DATABASES = {
+    #     'default': {
+    #         'ENGINE': 'django.contrib.gis.db.backends.postgris',
+    #         'NAME': os.environ.get('DB_NAME', 'choy_apparel_databases'),
+    #         'USER': os.environ.get('DB_USER', 'choy_apparel_databases_user'), 
+    #         'PASSWORD': os.environ.get('DB_PASSWORD', '61dxBxTt2X0vh5RfcTAkA9OAzaq2TeI2'),
+    #         'HOST': os.environ.get('DB_HOST', 'dpg-d0jfpt3uibrs73d073b0-a'),
+    #         'PORT': os.environ.get('DB_PORT', '5432'),       
+    #     }
+    # }
 
 
 # Static files (CSS, JavaScript, Images)
